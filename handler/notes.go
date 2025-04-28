@@ -240,11 +240,6 @@ func (h *Handler) FindUserNotes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	filter := bson.D{{Key: "userId", Value: payload.UserId}}
 
 	cursor, err := h.db.Collection("notes").Find(ctx, filter)

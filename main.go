@@ -29,6 +29,7 @@ func main() {
 
 	if err != nil {
 		log.Fatal("MongoDB connection error")
+		defer disconnect()
 	}
 
 	h := handler.NewHandler(db)
@@ -52,6 +53,6 @@ func main() {
 
 	fmt.Println("Server started at localhost:" + PORT)
 	if err := server.ListenAndServe(); err != nil {
-		defer disconnect()
+		fmt.Println("Server Closed")
 	}
 }
