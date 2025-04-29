@@ -3,15 +3,17 @@ package handler
 import (
 	"context"
 
-	"go.mongodb.org/mongo-driver/v2/mongo"
+	"github.com/laziness-coders/mongostore"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var ctx = context.TODO()
 
 type Handler struct {
-	db *mongo.Database
+	db    *mongo.Database
+	store *mongostore.MongoStore
 }
 
-func NewHandler(db *mongo.Database) *Handler {
-	return &Handler{db: db}
+func NewHandler(db *mongo.Database, store *mongostore.MongoStore) *Handler {
+	return &Handler{db: db, store: store}
 }

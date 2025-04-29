@@ -10,13 +10,14 @@ import (
 
 	"backend/handler"
 
+	"github.com/gorilla/context"
 	"github.com/joho/godotenv"
 )
 
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Fatalf("Failed to load environment configuration file: %v ", err.Error())
 	}
 
 	PORT := os.Getenv("PORT")
@@ -25,19 +26,23 @@ func main() {
 		PORT = "9000"
 	}
 
-	db, disconnect, err := data.ConnectDB()
+	db, disconnect := data.ConnectDB()
+	defer disconnect()
 
-	if err != nil {
-		log.Fatal("MongoDB connection error")
-		defer disconnect()
-	}
+	store := data.NewMongoStore(db)
 
-	h := handler.NewHandler(db)
+	h := handler.NewHandler(db, store)
 
 	mux := new(middleware.CustomMux)
+
+	mux.RegisterMiddleware(context.ClearHandler)
+
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello"))
+		w.Write([]byte("Connection Ok"))
 	})
+
+	mux.HandleFunc("/login", h.Login)
+	mux.HandleFunc("/auth", h.GetAuthenticatedUser)
 	mux.HandleFunc("/users", h.FindUserById)
 	mux.HandleFunc("/create/user", h.CreateUser)
 	mux.HandleFunc("/delete/user", h.DeleteUser)
@@ -53,6 +58,6 @@ func main() {
 
 	fmt.Println("Server started at localhost:" + PORT)
 	if err := server.ListenAndServe(); err != nil {
-		fmt.Println("Server Closed")
+		log.Println("Shutting down server...")
 	}
 }

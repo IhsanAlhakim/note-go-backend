@@ -5,28 +5,21 @@ import (
 	"log"
 	"os"
 
-	"github.com/joho/godotenv"
-	"go.mongodb.org/mongo-driver/v2/bson"
-	"go.mongodb.org/mongo-driver/v2/mongo"
-	"go.mongodb.org/mongo-driver/v2/mongo/options"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func ConnectDB() (*mongo.Database, func() error, error) {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal(("Error loading .env file"))
-		return nil, nil, err
-	}
+func ConnectDB() (*mongo.Database, func() error) {
 
 	MONGO_CONNECTION_STRING := os.Getenv("MONGO_CONNECTION_STRING")
 	if MONGO_CONNECTION_STRING == "" {
-		log.Fatal("Connection String Cannot Be Empty")
-		return nil, nil, err
+		log.Fatal("Database connection string is missing or empty")
 	}
 
-	client, err := mongo.Connect(options.Client().ApplyURI(MONGO_CONNECTION_STRING))
+	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(MONGO_CONNECTION_STRING))
 	if err != nil {
-		return nil, nil, err
+		log.Fatalf("Failed to connect to the database: %v ", err.Error())
 	}
 
 	indexModel := mongo.IndexModel{
@@ -46,5 +39,5 @@ func ConnectDB() (*mongo.Database, func() error, error) {
 		return err
 	}
 
-	return client.Database("note_go"), disconnectDB, nil
+	return client.Database("note_go"), disconnectDB
 }
