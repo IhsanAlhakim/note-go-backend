@@ -91,23 +91,6 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var checkUser data.User
-
-	err := h.db.Collection("users").FindOne(ctx, bson.M{"username": payload.Username}).Decode(&checkUser)
-	if mongo.IsDuplicateKeyError(err) {
-		utils.JSONResponse(w, R{
-			Message: "Username is already taken",
-		}, http.StatusConflict)
-		return
-	}
-
-	if err != nil && err != mongo.ErrNoDocuments {
-		utils.JSONResponse(w, R{
-			Message: fmt.Sprintf("Server Error: %v", err.Error()),
-		}, http.StatusInternalServerError)
-		return
-	}
-
 	hashedPassword, err := utils.GenerateHashPassword(w, payload.Password)
 	if err != nil {
 		return
@@ -116,6 +99,12 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	newUser := data.User{Username: payload.Username, Email: payload.Email, Password: string(hashedPassword)}
 
 	_, err = h.db.Collection("users").InsertOne(ctx, newUser)
+	if mongo.IsDuplicateKeyError(err) {
+		utils.JSONResponse(w, R{
+			Message: "Username is already taken",
+		}, http.StatusConflict)
+		return
+	}
 
 	if err != nil {
 		utils.JSONResponse(w, R{
@@ -124,7 +113,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.JSONResponse(w, R{Message: "User created"}, http.StatusCreated)
+	utils.JSONResponse(w, R{Message: "User created successfully"}, http.StatusCreated)
 }
 
 func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
@@ -140,7 +129,7 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !utils.HasEmptyField(w, payload) {
+	if utils.HasEmptyField(w, payload) {
 		return
 	}
 
@@ -157,7 +146,14 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = h.db.Collection("users").DeleteOne(ctx, bson.D{{Key: "_id", Value: objID}})
+	var deletedUser data.User
+	err = h.db.Collection("users").FindOneAndDelete(ctx, bson.D{{Key: "_id", Value: objID}}).Decode(&deletedUser)
+
+	if err == mongo.ErrNoDocuments {
+		utils.JSONResponse(w, R{Message: "Data not found"}, http.StatusNotFound)
+		return
+	}
+
 	if err != nil {
 		utils.JSONResponse(w, R{
 			Message: fmt.Sprintf("Error delete data : %v", err.Error()),
@@ -167,7 +163,8 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	utils.JSONResponse(w, R{
 		Message: "Data deleted successfully",
-	}, http.StatusNoContent)
+		Data:    deletedUser,
+	}, http.StatusOK)
 
 }
 
@@ -213,8 +210,8 @@ func (h *Handler) FindUserById(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := struct {
-		Username string
-		Email    string
+		Username string `json:"username"`
+		Email    string `json:"email"`
 	}{result.Username, result.Email}
 
 	utils.JSONResponse(w, R{

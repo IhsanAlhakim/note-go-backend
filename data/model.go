@@ -15,10 +15,10 @@ type User struct {
 }
 
 type Note struct {
-	NoteId    primitive.ObjectID `bson:"_id,omitempty"`
-	UserId    string             `bson:"userId"`
-	Title     string             `bson:"title"`
-	Text      string             `bson:"text"`
-	CreatedAt string             `bson:"createdAt"`
-	UpdatedAt string             `bson:"updatedAt"`
+	NoteId    primitive.ObjectID `bson:"_id,omitempty" json:"noteId"`
+	UserId    string             `bson:"userId" json:"userId"`
+	Title     string             `bson:"title" json:"title"`
+	Text      string             `bson:"text" json:"text"`
+	CreatedAt string             `bson:"createdAt" json:"createdAt"`
+	UpdatedAt string             `bson:"updatedAt" json:"updatedAt"`
 }

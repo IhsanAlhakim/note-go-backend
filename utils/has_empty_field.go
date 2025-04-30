@@ -1,13 +1,11 @@
 package utils
 
 import (
-	"fmt"
 	"net/http"
 	"reflect"
 )
 
 func HasEmptyField(w http.ResponseWriter, s interface{}) bool {
-	fmt.Printf("%+v", s)
 
 	v := reflect.ValueOf(s)
 	if v.Kind() == reflect.Ptr {
