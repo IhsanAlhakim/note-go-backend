@@ -5,7 +5,14 @@ import (
 	"net/http"
 )
 
-func JSONResponse(w http.ResponseWriter, data map[string]interface{}, statusCode int) {
+type Response struct {
+	Message string      `json:"message"`
+	Data    interface{} `json:"data,omitempty"`
+}
+
+type R = Response
+
+func JSONResponse(w http.ResponseWriter, data Response, statusCode int) {
 	jsonInBytes, _ := json.Marshal(data)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)

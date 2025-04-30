@@ -43,7 +43,7 @@ func main() {
 
 	mux.HandleFunc("/login", h.Login)
 	mux.HandleFunc("/auth", h.GetAuthenticatedUser)
-	mux.HandleFunc("/users", h.FindUserById)
+	mux.HandleFunc("/user", h.FindUserById)
 	mux.HandleFunc("/create/user", h.CreateUser)
 	mux.HandleFunc("/delete/user", h.DeleteUser)
 	mux.HandleFunc("/notes", h.FindUserNotes)

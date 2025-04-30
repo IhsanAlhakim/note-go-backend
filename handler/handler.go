@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"backend/utils"
 	"context"
 
 	"github.com/laziness-coders/mongostore"
@@ -8,6 +9,8 @@ import (
 )
 
 var ctx = context.TODO()
+
+type R = utils.Response
 
 type Handler struct {
 	db    *mongo.Database
