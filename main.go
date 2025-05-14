@@ -34,6 +34,8 @@ func main() {
 	store := data.NewMongoStore(db)
 	
 	h := handler.NewHandler(db, store)
+
+	m := middleware.NewMiddleware(store)
 	
 	mux := new(middleware.CustomMux)
 	
@@ -41,7 +43,7 @@ func main() {
 		AllowedOrigins: []string{"http://localhost:5173"},
 		AllowedMethods: []string{"OPTIONS","GET","POST","DELETE","PATCH"},
 		AllowedHeaders: []string{"Content-Type"},
-		Debug: true,
+		AllowCredentials: true,
 	})
 
 	mux.RegisterMiddleware(c.Handler)
@@ -53,8 +55,7 @@ func main() {
 	})
 
 	mux.HandleFunc("/login", h.Login)
-	mux.HandleFunc("/auth", h.GetAuthenticatedUser)
-	mux.HandleFunc("/user", h.FindUserById)
+	mux.Handle("/user", m.AuthMiddleware(http.HandlerFunc(h.GetLoggedInUser)))
 	mux.HandleFunc("/create/user", h.CreateUser)
 	mux.HandleFunc("/delete/user", h.DeleteUser)
 	mux.HandleFunc("/notes", h.FindUserNotes)

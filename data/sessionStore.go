@@ -2,6 +2,7 @@ package data
 
 import (
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -35,5 +36,9 @@ func NewMongoStore(db *mongo.Database) *mongostore.MongoStore {
 	encryptionKey := []byte(encryptionKey)
 
 	store := mongostore.NewMongoStore(db.Collection("sessions"), maxAge, ensureTTL, authKey, encryptionKey)
+	store.Options.Path = "/"
+	store.Options.HttpOnly = true
+	store.Options.Secure = true // hanya untuk dev
+	store.Options.SameSite = http.SameSiteNoneMode // none untuk prod
 	return store
 }

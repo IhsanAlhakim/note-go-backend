@@ -17,6 +17,11 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if r.Header.Get("Content-Type") != "application/json" {
+		utils.JSONResponse(w,R{Message: "Content-Type must application/json"}, http.StatusUnsupportedMediaType)
+		return
+	}
+
 	payload := struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
@@ -52,24 +57,13 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	session.Values["userID"] = result.UserId.Hex()
 	session.Save(r, w)
 
-	utils.JSONResponse(w, R{Message: "Login successful"}, http.StatusOK)
-}
+	responseData := struct {
+		Email     string `json:"email"`
+		Username    string `json:"username"`
+	}{result.Email, result.Username}
 
-func (h *Handler) GetAuthenticatedUser(w http.ResponseWriter, r *http.Request) {
-	if !utils.IsHTTPMethodCorrect(w, r, "GET") {
-		return
-	}
 
-	session, _ := h.store.Get(r, data.SESSION_ID)
-
-	if session.Values["userID"] == nil {
-		utils.JSONResponse(w, R{Message: "User not authenticated"}, http.StatusUnauthorized)
-		return
-	}
-
-	utils.JSONResponse(w, R{
-		Message: "User authenticated",
-	}, http.StatusOK)
+	utils.JSONResponse(w, R{Message: "Login successful", Data: responseData}, http.StatusOK)
 }
 
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
@@ -78,7 +72,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Header.Get("Content-Type") != "application/json" {
-		http.Error(w, "Content-Type must application/json", http.StatusUnsupportedMediaType)
+		utils.JSONResponse(w,R{Message: "Content-Type must application/json"}, http.StatusUnsupportedMediaType)
 		return
 	}
 
@@ -173,29 +167,22 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (h *Handler) FindUserById(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetLoggedInUser(w http.ResponseWriter, r *http.Request) {
 	if !utils.IsHTTPMethodCorrect(w, r, "GET") {
 		return
 	}
 
-	payload := struct {
-		UserId string `json:"userId"`
-	}{}
+	session, _ := h.store.Get(r, data.SESSION_ID)
 
-	if err := utils.DecodeRequestBody(w, r, &payload); err != nil {
-		return
-	}
+	id := session.Values["userID"].(string) // interface{} -> string
 
-	if utils.HasEmptyField(w, payload) {
-		return
-	}
 
 	// Kalau pakai mongo v2 pakai ini kalau cari data b	err = h.db.Collection("users").FindOne(ctx, bson.M{"_id": objID}).Decode(&result)
 	// erdasarkan id, idnya ubah ke obj
 	// objID, err := bson.ObjectIDFromHex(payload.UserId)
 
 	// Kalau pakai mongo v1
-	objID, err := primitive.ObjectIDFromHex(payload.UserId)
+	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		utils.JSONResponse(w, R{
 			Message: fmt.Sprintf("Server error : %v", err.Error()),
