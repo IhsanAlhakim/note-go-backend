@@ -57,19 +57,14 @@ func (h *Handler) DeleteNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	payload := struct {
-		NoteId string `json:"noteId"`
-	}{}
+	noteId := r.URL.Query().Get("noteId")
 
-	if err := utils.DecodeRequestBody(w, r, &payload); err != nil {
+	if noteId == "" {
+		utils.JSONResponse(w, R{Message: "Missing required parameter: noteId"}, http.StatusBadRequest)
 		return
 	}
 
-	if utils.HasEmptyField(w, payload) {
-		return
-	}
-
-	objID, err := primitive.ObjectIDFromHex(payload.NoteId)
+	objID, err := primitive.ObjectIDFromHex(noteId)
 
 	if err != nil {
 		utils.JSONResponse(w, R{Message: fmt.Sprintf("Server error: %v", err.Error())}, http.StatusInternalServerError)
@@ -149,19 +144,14 @@ func (h *Handler) FindNoteById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	payload := struct {
-		NoteId string `json:"noteId"`
-	}{}
+	noteId := r.URL.Query().Get("noteId")
 
-	if err := utils.DecodeRequestBody(w, r, &payload); err != nil {
+	if noteId == "" {
+		utils.JSONResponse(w, R{Message: "Missing required parameter: noteId"}, http.StatusBadRequest)
 		return
 	}
 
-	if utils.HasEmptyField(w, payload) {
-		return
-	}
-
-	objID, err := primitive.ObjectIDFromHex(payload.NoteId)
+	objID, err := primitive.ObjectIDFromHex(noteId)
 
 	if err != nil {
 		utils.JSONResponse(w, R{Message: fmt.Sprintf("Server error: %v", err.Error())}, http.StatusInternalServerError)
@@ -198,19 +188,14 @@ func (h *Handler) FindUserNotes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	payload := struct {
-		UserId string `json:"userId"`
-	}{}
+	userId := r.URL.Query().Get("userId")
 
-	if err := utils.DecodeRequestBody(w, r, &payload); err != nil {
+	if userId == "" {
+		utils.JSONResponse(w, R{Message: "Missing required parameter: userId"}, http.StatusBadRequest)
 		return
 	}
 
-	if utils.HasEmptyField(w, payload) {
-		return
-	}
-
-	filter := bson.D{{Key: "userId", Value: payload.UserId}}
+	filter := bson.D{{Key: "userId", Value: userId}}
 
 	cursor, err := h.db.Collection("notes").Find(ctx, filter)
 

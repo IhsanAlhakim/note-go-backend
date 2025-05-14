@@ -12,6 +12,7 @@ import (
 
 	"github.com/gorilla/context"
 	"github.com/joho/godotenv"
+	"github.com/rs/cors"
 )
 
 func main() {
@@ -19,24 +20,34 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to load environment configuration file: %v ", err.Error())
 	}
-
+	
 	PORT := os.Getenv("PORT")
-
+	
 	if PORT == "" {
 		PORT = "9000"
 	}
-
+	
+	
 	db, disconnect := data.ConnectDB()
 	defer disconnect()
-
+	
 	store := data.NewMongoStore(db)
-
+	
 	h := handler.NewHandler(db, store)
-
+	
 	mux := new(middleware.CustomMux)
+	
+	c := cors.New(cors.Options{
+		AllowedOrigins: []string{"http://localhost:5173"},
+		AllowedMethods: []string{"OPTIONS","GET","POST","DELETE","PATCH"},
+		AllowedHeaders: []string{"Content-Type"},
+		Debug: true,
+	})
 
+	mux.RegisterMiddleware(c.Handler)
 	mux.RegisterMiddleware(context.ClearHandler)
-
+	
+	
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Connection Ok"))
 	})

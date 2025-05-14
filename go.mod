@@ -7,6 +7,8 @@ require (
 	golang.org/x/crypto v0.33.0
 )
 
+require github.com/rs/cors v1.11.1 // indirect
+
 require (
 	github.com/golang/snappy v1.0.0 // indirect
 	github.com/gorilla/context v1.1.2

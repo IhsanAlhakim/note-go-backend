@@ -77,6 +77,11 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if r.Header.Get("Content-Type") != "application/json" {
+		http.Error(w, "Content-Type must application/json", http.StatusUnsupportedMediaType)
+		return
+	}
+
 	payload := struct {
 		Username string `json:"username"`
 		Email    string `json:"email"`
