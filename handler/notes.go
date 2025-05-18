@@ -205,14 +205,18 @@ func (h *Handler) FindUserNotes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId := r.URL.Query().Get("userId")
+	session, _ := h.store.Get(r, data.SESSION_ID)
 
-	if userId == "" {
-		utils.JSONResponse(w, R{Message: "Missing required parameter: userId"}, http.StatusBadRequest)
-		return
-	}
+	id := session.Values["userID"].(string)
 
-	filter := bson.D{{Key: "userId", Value: userId}}
+	// userId := r.URL.Query().Get("userId")
+
+	// if userId == "" {
+	// 	utils.JSONResponse(w, R{Message: "Missing required parameter: userId"}, http.StatusBadRequest)
+	// 	return
+	// }
+
+	filter := bson.D{{Key: "userId", Value: id}}
 
 	cursor, err := h.db.Collection("notes").Find(ctx, filter)
 
