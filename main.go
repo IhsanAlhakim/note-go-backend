@@ -59,7 +59,7 @@ func main() {
 	mux.Handle("/user", m.AuthMiddleware(http.HandlerFunc(h.GetLoggedInUser)))
 	mux.HandleFunc("/create/user", h.CreateUser)
 	mux.Handle("/delete/user", m.AuthMiddleware(http.HandlerFunc(h.DeleteUser)))
-	mux.HandleFunc("/notes", h.FindUserNotes)
+	mux.Handle("/notes", m.AuthMiddleware(http.HandlerFunc(h.FindUserNotes)))
 	mux.HandleFunc("/note", h.FindNoteById)
 	mux.Handle("/create/note", m.AuthMiddleware(http.HandlerFunc(h.CreateNote)))
 	mux.HandleFunc("/delete/note", h.DeleteNote)
