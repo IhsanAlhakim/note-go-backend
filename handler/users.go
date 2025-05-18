@@ -40,7 +40,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	err := h.db.Collection("users").FindOne(ctx, bson.M{"username": payload.Username}).Decode(&result)
 
 	if err == mongo.ErrNoDocuments {
-		utils.JSONResponse(w, R{Message: "Data not found"}, http.StatusNotFound)
+		utils.JSONResponse(w, R{Message: "User not found"}, http.StatusNotFound)
 		return
 	}
 
@@ -64,6 +64,19 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 
 	utils.JSONResponse(w, R{Message: "Login successful", Data: responseData}, http.StatusOK)
+}
+
+func (h * Handler) Logout(w http.ResponseWriter, r *http.Request) {
+	if !utils.IsHTTPMethodCorrect(w, r, "POST") {
+		return
+	}
+	session, err := h.store.Get(r, data.SESSION_ID)
+	if err != nil {
+		utils.JSONResponse(w, R{Message: fmt.Sprintf("Error Logout: %v", err.Error())}, http.StatusInternalServerError)
+	}
+	session.Options.MaxAge = -1
+	session.Save(r, w)
+	utils.JSONResponse(w, R{Message: "Logout successful"}, http.StatusOK)
 }
 
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
@@ -111,7 +124,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		}, http.StatusInternalServerError)
 		return
 	}
-
+	
 	utils.JSONResponse(w, R{Message: "User created successfully"}, http.StatusCreated)
 }
 
@@ -119,24 +132,20 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	if !utils.IsHTTPMethodCorrect(w, r, "DELETE") {
 		return
 	}
-
-	payload := struct {
-		UserId string `json:"userId"`
-	}{}
-
-	if err := utils.DecodeRequestBody(w, r, &payload); err != nil {
-		return
+	
+	session, err := h.store.Get(r, data.SESSION_ID)
+	
+	if err != nil {
+		utils.JSONResponse(w, R{Message: fmt.Sprintf("Server Error: %v", err.Error())}, http.StatusInternalServerError)
 	}
+	id := session.Values["userID"].(string) // interface{} -> string
 
-	if utils.HasEmptyField(w, payload) {
-		return
-	}
 
 	// Kalau pakai mongo v2 pakai ini kalau cari data berdasarkan id, idnya ubah ke obj
 	// objID, err := bson.ObjectIDFromHex(payload.UserId)
 
 	// Kalau pakai mongo v1
-	objID, err := primitive.ObjectIDFromHex(payload.UserId)
+	objID, err := primitive.ObjectIDFromHex(id)
 
 	if err != nil {
 		utils.JSONResponse(w, R{
@@ -149,7 +158,7 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	err = h.db.Collection("users").FindOneAndDelete(ctx, bson.D{{Key: "_id", Value: objID}}).Decode(&deletedUser)
 
 	if err == mongo.ErrNoDocuments {
-		utils.JSONResponse(w, R{Message: "Data not found"}, http.StatusNotFound)
+		utils.JSONResponse(w, R{Message: "User not found"}, http.StatusNotFound)
 		return
 	}
 
@@ -160,9 +169,11 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	session.Options.MaxAge = -1
+	session.Save(r, w)
+
 	utils.JSONResponse(w, R{
 		Message: "Data deleted successfully",
-		Data:    deletedUser,
 	}, http.StatusOK)
 
 }
