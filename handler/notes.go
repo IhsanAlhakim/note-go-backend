@@ -45,14 +45,28 @@ func (h *Handler) CreateNote(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt: updatedAt,
 	}
 
-	_, err := h.db.Collection("notes").InsertOne(ctx, newNote)
+	note, err := h.db.Collection("notes").InsertOne(ctx, newNote)
 
 	if err != nil {
 		utils.JSONResponse(w, R{Message: fmt.Sprintf("Server error: %v", err.Error())}, http.StatusInternalServerError)
 		return
 	}
 
-	utils.JSONResponse(w, R{Message: "Note created"}, http.StatusCreated)
+	var result data.Note
+
+	err = h.db.Collection("notes").FindOne(ctx, bson.M{"_id": note.InsertedID}).Decode(&result)
+
+	if err == mongo.ErrNoDocuments {
+		utils.JSONResponse(w, R{Message: "Data not found"}, http.StatusNotFound)
+		return
+	}
+
+	if err != nil {
+		utils.JSONResponse(w, R{Message: fmt.Sprintf("Server error: %v", err.Error())}, http.StatusInternalServerError)
+		return
+	}
+
+	utils.JSONResponse(w, R{Message: "Note created", Data: result}, http.StatusCreated)
 }
 
 func (h *Handler) DeleteNote(w http.ResponseWriter, r *http.Request) {
