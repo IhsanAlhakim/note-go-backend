@@ -18,7 +18,6 @@ func (h *Handler) CreateNote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	payload := struct {
-		UserId string `json:"userId"`
 		Title  string `json:"title"`
 		Text   string `json:"text"`
 	}{}
@@ -31,11 +30,15 @@ func (h *Handler) CreateNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	session, _ := h.store.Get(r, data.SESSION_ID)
+
+	id := session.Values["userID"].(string)
+
 	var createdAt = time.Now().String()
 	var updatedAt = createdAt
 
 	newNote := data.Note{
-		UserId:    payload.UserId,
+		UserId:    id,
 		Title:     payload.Title,
 		Text:      payload.Text,
 		CreatedAt: createdAt,
