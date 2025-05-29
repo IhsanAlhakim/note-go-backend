@@ -62,7 +62,7 @@ func main() {
 	mux.Handle("/notes", m.AuthMiddleware(http.HandlerFunc(h.FindUserNotes)))
 	mux.HandleFunc("/note", h.FindNoteById)
 	mux.Handle("/create/note", m.AuthMiddleware(http.HandlerFunc(h.CreateNote)))
-	mux.HandleFunc("/delete/note", h.DeleteNote)
+	mux.Handle("/delete/note", m.AuthMiddleware(http.HandlerFunc(h.DeleteNote)))
 	mux.Handle("/update/note", m.AuthMiddleware(http.HandlerFunc(h.UpdateNote)))
 
 	server := new(http.Server)
