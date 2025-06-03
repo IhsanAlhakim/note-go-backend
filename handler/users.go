@@ -205,6 +205,11 @@ func (h *Handler) GetLoggedInUser(w http.ResponseWriter, r *http.Request) {
 
 	err = h.db.Collection("users").FindOne(ctx, bson.D{{Key: "_id", Value: objID}}).Decode(&result)
 
+	if err == mongo.ErrNoDocuments {
+		utils.JSONResponse(w, R{Message: "User not found"}, http.StatusNotFound)
+		return
+	}
+
 	if err != nil {
 		utils.JSONResponse(w, R{
 			Message: fmt.Sprintf("Error fetch data : %v", err.Error()),
