@@ -27,8 +27,8 @@ func (h *Handler) CreateNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if utils.HasEmptyField(w, payload) {
-		return
+	if payload.Text == "" && payload.Title == "" {
+		utils.JSONResponse(w, R{Message: "Note text and title cannot both be empty. Only one of them"}, http.StatusBadRequest)
 	}
 
 	session, _ := h.store.Get(r, data.SESSION_ID)
