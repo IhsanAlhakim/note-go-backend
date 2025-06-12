@@ -57,12 +57,9 @@ func (h *Handler) CreateNote(w http.ResponseWriter, r *http.Request) {
 
 	err = h.db.Collection("notes").FindOne(ctx, bson.M{"_id": note.InsertedID}).Decode(&result)
 
-	var response R
-
-	response = R{Message: "Note created", Data: result}
-
 	if err == mongo.ErrNoDocuments {
-		response = R{Message: "Note created", Data: nil}
+		utils.JSONResponse(w, R{Message: "Note created", Data: nil}, http.StatusCreated)
+		return
 	}
 
 	if err != nil {
@@ -70,7 +67,7 @@ func (h *Handler) CreateNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.JSONResponse(w, R{Message: "Note created", Data: response}, http.StatusCreated)
+	utils.JSONResponse(w, R{Message: "Note created", Data: result}, http.StatusCreated)
 }
 
 func (h *Handler) DeleteNote(w http.ResponseWriter, r *http.Request) {
