@@ -29,6 +29,7 @@ func (h *Handler) CreateNote(w http.ResponseWriter, r *http.Request) {
 
 	if payload.Text == "" && payload.Title == "" {
 		utils.JSONResponse(w, R{Message: "Note text and title cannot both be empty. Only one of them"}, http.StatusBadRequest)
+		return
 	}
 
 	session, _ := h.store.Get(r, data.SESSION_ID)
@@ -118,8 +119,14 @@ func (h *Handler) UpdateNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if payload.NoteId == "" {
+		utils.JSONResponse(w, R{Message: "Missing required parameter: noteId"}, http.StatusBadRequest)
+		return
+	}
+
 	if payload.Text == "" && payload.Title == "" {
 		utils.JSONResponse(w, R{Message: "Note text and title cannot both be empty. Only one of them"}, http.StatusBadRequest)
+		return
 	}
 
 	var updatedAt = time.Now().String()
