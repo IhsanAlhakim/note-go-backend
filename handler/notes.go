@@ -10,6 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func (h *Handler) CreateNote(w http.ResponseWriter, r *http.Request) {
@@ -218,7 +219,10 @@ func (h *Handler) FindUserNotes(w http.ResponseWriter, r *http.Request) {
 
 	filter := bson.D{{Key: "userId", Value: id}}
 
-	cursor, err := h.db.Collection("notes").Find(ctx, filter)
+	findOptions := options.Find()
+	findOptions.SetSort(bson.D{{Key: "_id", Value: -1}})
+
+	cursor, err := h.db.Collection("notes").Find(ctx, filter, findOptions)
 
 	if err != nil {
 		utils.JSONResponse(w, R{Message: fmt.Sprintf("Server error: %v", err.Error())}, http.StatusInternalServerError)
