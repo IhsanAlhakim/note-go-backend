@@ -124,11 +124,6 @@ func (h *Handler) UpdateNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if payload.Text == "" && payload.Title == "" {
-		utils.JSONResponse(w, R{Message: "Note text and title cannot both be empty. Only one of them"}, http.StatusBadRequest)
-		return
-	}
-
 	var updatedAt = time.Now().String()
 
 	objID, err := primitive.ObjectIDFromHex(payload.NoteId)
