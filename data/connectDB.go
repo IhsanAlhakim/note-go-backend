@@ -10,7 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func ConnectDB() (*mongo.Database, func() error) {
+func ConnectDB() (*mongo.Database, func() error, *mongo.Client) {
 
 	MONGO_CONNECTION_STRING := os.Getenv("MONGO_CONNECTION_STRING")
 	if MONGO_CONNECTION_STRING == "" {
@@ -39,5 +39,5 @@ func ConnectDB() (*mongo.Database, func() error) {
 		return err
 	}
 
-	return client.Database("note_go"), disconnectDB
+	return client.Database("note_go"), disconnectDB, client
 }

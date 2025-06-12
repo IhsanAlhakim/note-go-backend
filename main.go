@@ -28,12 +28,12 @@ func main() {
 	}
 	
 	
-	db, disconnect := data.ConnectDB()
+	db, disconnect, client := data.ConnectDB()
 	defer disconnect()
 	
 	store := data.NewMongoStore(db)
 	
-	h := handler.NewHandler(db, store)
+	h := handler.NewHandler(db, store, client)
 
 	m := middleware.NewMiddleware(store)
 	

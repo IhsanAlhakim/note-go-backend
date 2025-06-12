@@ -18,7 +18,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Header.Get("Content-Type") != "application/json" {
-		utils.JSONResponse(w,R{Message: "Content-Type must application/json"}, http.StatusUnsupportedMediaType)
+		utils.JSONResponse(w, R{Message: "Content-Type must application/json"}, http.StatusUnsupportedMediaType)
 		return
 	}
 
@@ -58,15 +58,14 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	session.Save(r, w)
 
 	responseData := struct {
-		Email     string `json:"email"`
-		Username    string `json:"username"`
+		Email    string `json:"email"`
+		Username string `json:"username"`
 	}{result.Email, result.Username}
-
 
 	utils.JSONResponse(w, R{Message: "Login successful", Data: responseData}, http.StatusOK)
 }
 
-func (h * Handler) Logout(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	if !utils.IsHTTPMethodCorrect(w, r, "POST") {
 		return
 	}
@@ -85,7 +84,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Header.Get("Content-Type") != "application/json" {
-		utils.JSONResponse(w,R{Message: "Content-Type must application/json"}, http.StatusUnsupportedMediaType)
+		utils.JSONResponse(w, R{Message: "Content-Type must application/json"}, http.StatusUnsupportedMediaType)
 		return
 	}
 
@@ -124,7 +123,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		}, http.StatusInternalServerError)
 		return
 	}
-	
+
 	utils.JSONResponse(w, R{Message: "User created successfully"}, http.StatusCreated)
 }
 
@@ -132,14 +131,13 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	if !utils.IsHTTPMethodCorrect(w, r, "DELETE") {
 		return
 	}
-	
+
 	session, err := h.store.Get(r, data.SESSION_ID)
-	
+
 	if err != nil {
 		utils.JSONResponse(w, R{Message: fmt.Sprintf("Server Error: %v", err.Error())}, http.StatusInternalServerError)
 	}
 	id := session.Values["userID"].(string) // interface{} -> string
-
 
 	// Kalau pakai mongo v2 pakai ini kalau cari data berdasarkan id, idnya ubah ke obj
 	// objID, err := bson.ObjectIDFromHex(payload.UserId)
@@ -154,8 +152,35 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Memakai transaction untuk menghapus data user dan note user
+	// jika salah satu gagal, maka seluruh operasi akan dibatalkan (rollback) untuk menjaga integritas data
+
+	mongoSession, err := h.client.StartSession()
+
+	if err != nil {
+		utils.JSONResponse(w, R{
+			Message: fmt.Sprintf("Server error : %v", err.Error()),
+		}, http.StatusInternalServerError)
+		return
+	}
+
+	defer mongoSession.EndSession(ctx)
+
 	var deletedUser data.User
-	err = h.db.Collection("users").FindOneAndDelete(ctx, bson.D{{Key: "_id", Value: objID}}).Decode(&deletedUser)
+	_, err = mongoSession.WithTransaction(ctx, func(sc mongo.SessionContext) (interface{}, error) {
+		// Hapus user
+		if err = h.db.Collection("users").FindOneAndDelete(ctx, bson.D{{Key: "_id", Value: objID}}).Decode(&deletedUser); err != nil {
+			return nil, err // data di rollback jika proses ini gagal
+		}
+
+		// Hapus notes milik user
+		deleteNotesFilter := bson.D{{Key: "userId", Value: id}}
+		if _, err = h.db.Collection("notes").DeleteMany(ctx, deleteNotesFilter); err != nil {
+			return nil, err // di rollback jika gagal
+		}
+
+		return nil, nil
+	})
 
 	if err == mongo.ErrNoDocuments {
 		utils.JSONResponse(w, R{Message: "User not found"}, http.StatusNotFound)
@@ -186,7 +211,6 @@ func (h *Handler) GetLoggedInUser(w http.ResponseWriter, r *http.Request) {
 	session, _ := h.store.Get(r, data.SESSION_ID)
 
 	id := session.Values["userID"].(string) // interface{} -> string
-
 
 	// Kalau pakai mongo v2 pakai ini kalau cari data b	err = h.db.Collection("users").FindOne(ctx, bson.M{"_id": objID}).Decode(&result)
 	// erdasarkan id, idnya ubah ke obj
