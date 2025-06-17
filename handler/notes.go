@@ -36,7 +36,7 @@ func (h *Handler) CreateNote(w http.ResponseWriter, r *http.Request) {
 
 	id := session.Values["userID"].(string)
 
-	var createdAt = time.Now().String()
+	var createdAt = time.Now().Format(time.RFC3339)
 	var updatedAt = createdAt
 
 	newNote := data.Note{
