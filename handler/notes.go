@@ -124,7 +124,7 @@ func (h *Handler) UpdateNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var updatedAt = time.Now().String()
+	var updatedAt = time.Now().Format(time.RFC3339)
 
 	objID, err := primitive.ObjectIDFromHex(payload.NoteId)
 
