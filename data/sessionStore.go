@@ -13,9 +13,10 @@ import (
 var SESSION_ID, authKey, encryptionKey string
 
 func init() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Failed to load environment configuration file: %v ", err.Error())
+	if os.Getenv("ENV") != "production" {
+		if err := godotenv.Load(); err != nil {
+			log.Println("No .env file found, continue using system environment variables")
+		}
 	}
 
 	SESSION_ID = os.Getenv("SESSION_ID")
