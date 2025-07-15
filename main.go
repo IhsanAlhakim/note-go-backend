@@ -16,9 +16,10 @@ import (
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Failed to load environment configuration file: %v ", err.Error())
+	if os.Getenv("ENV") != "production" {
+		if err := godotenv.Load(); err != nil {
+			log.Println("No .env file found, continue using system environment variables")
+		}
 	}
 	
 	PORT := os.Getenv("PORT")
