@@ -11,15 +11,14 @@ import (
 	"backend/handler"
 
 	"github.com/gorilla/context"
-	"github.com/joho/godotenv"
 	"github.com/rs/cors"
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Failed to load environment configuration file: %v ", err.Error())
-	}
+	// err := godotenv.Load()
+	// if err != nil {
+	// 	log.Fatalf("Failed to load environment configuration file: %v ", err.Error())
+	// }
 	
 	PORT := os.Getenv("PORT")
 	
