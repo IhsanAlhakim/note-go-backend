@@ -39,9 +39,11 @@ func main() {
 	m := middleware.NewMiddleware(store)
 	
 	mux := new(middleware.CustomMux)
+
+	allowedOrigin := os.Getenv("CLIENT_URL")
 	
 	c := cors.New(cors.Options{
-		AllowedOrigins: []string{"http://localhost:5173"},
+		AllowedOrigins: []string{allowedOrigin},
 		AllowedMethods: []string{"OPTIONS","GET","POST","DELETE","PATCH"},
 		AllowedHeaders: []string{"Content-Type"},
 		AllowCredentials: true,
