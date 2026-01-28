@@ -84,22 +84,22 @@ func (h *Handler) DeleteNote(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UpdateNote(w http.ResponseWriter, r *http.Request) {
-	if !utils.IsHTTPMethodCorrect(w, r, "PATCH") {
-		return
-	}
-
 	payload := struct {
 		NoteId string `json:"noteId"`
 		Title  string `json:"title"`
 		Text   string `json:"text"`
 	}{}
 
-	if err := utils.DecodeRequestBody(w, r, &payload); err != nil {
-		return
+	if err := BindJSON(r, &payload); err != nil {
+		if err == ErrEmptyBody {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	}
 
 	if payload.NoteId == "" {
-		utils.JSONResponse(w, R{Message: "Missing required parameter: noteId"}, http.StatusBadRequest)
+		http.Error(w, "Missing required parameter: noteId", http.StatusBadRequest)
 		return
 	}
 
@@ -108,7 +108,7 @@ func (h *Handler) UpdateNote(w http.ResponseWriter, r *http.Request) {
 	objID, err := primitive.ObjectIDFromHex(payload.NoteId)
 
 	if err != nil {
-		utils.JSONResponse(w, R{Message: fmt.Sprintf("Server error: %v", err.Error())}, http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -122,20 +122,16 @@ func (h *Handler) UpdateNote(w http.ResponseWriter, r *http.Request) {
 			}},
 	}
 
-	var updatedNote data.Note
-	err = h.db.Collection("notes").FindOneAndUpdate(ctx, filter, update).Decode(&updatedNote)
-
-	if err == mongo.ErrNoDocuments {
-		utils.JSONResponse(w, R{Message: "Data not found"}, http.StatusNotFound)
+	if err = h.db.Collection("notes").FindOneAndUpdate(ctx, filter, update).Err(); err != nil {
+		if err == mongo.ErrNoDocuments {
+			http.Error(w, "Data not found", http.StatusBadRequest)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if err != nil {
-		utils.JSONResponse(w, R{Message: fmt.Sprintf("Server error: %v", err.Error())}, http.StatusInternalServerError)
-		return
-	}
-
-	utils.JSONResponse(w, R{Message: "Note updated successfully", Data: updatedNote}, http.StatusOK)
+	RespondJSON(w, R{Message: "Note updated successfully"}, http.StatusOK)
 }
 
 func (h *Handler) FindNoteById(w http.ResponseWriter, r *http.Request) {
