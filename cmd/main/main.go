@@ -22,7 +22,7 @@ func main() {
 	db, client := database.Connect(cfg)
 	defer client.Disconnect(context.TODO())
 
-	store := database.NewSessionStore(db)
+	store := database.NewSessionStore(db, cfg)
 
 	h := handlers.NewHandler(db, store, client)
 
