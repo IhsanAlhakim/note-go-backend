@@ -1,4 +1,4 @@
-package utils
+package handlers
 
 import (
 	"encoding/json"
@@ -12,9 +12,8 @@ type Response struct {
 
 type R = Response
 
-func JSONResponse(w http.ResponseWriter, data Response, statusCode int) {
-	jsonInBytes, _ := json.Marshal(data)
+func RespondJSON(w http.ResponseWriter, data Response, statusCode int) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	w.Write(jsonInBytes)
+	return json.NewEncoder(w).Encode(data)
 }
