@@ -29,7 +29,7 @@ func init() {
 }
 
 // Cookies created automatically after session is created
-
+// Cookie Based Authentication
 func NewMongoStore(db *mongo.Database) *mongostore.MongoStore {
 	maxAge := 86400 * 7 // 1 week
 	ensureTTL := true
@@ -39,7 +39,7 @@ func NewMongoStore(db *mongo.Database) *mongostore.MongoStore {
 	store := mongostore.NewMongoStore(db.Collection("sessions"), maxAge, ensureTTL, authKey, encryptionKey)
 	store.Options.Path = "/"
 	store.Options.HttpOnly = true
-	store.Options.Secure = true // hanya untuk dev
+	store.Options.Secure = true                    // hanya untuk dev
 	store.Options.SameSite = http.SameSiteNoneMode // none untuk prod
 	return store
 }
