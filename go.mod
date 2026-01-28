@@ -7,11 +7,13 @@ require (
 	golang.org/x/crypto v0.33.0
 )
 
-require github.com/rs/cors v1.11.1
+require (
+	github.com/gorilla/context v1.1.2
+	github.com/rs/cors v1.11.1
+)
 
 require (
 	github.com/golang/snappy v1.0.0 // indirect
-	github.com/gorilla/context v1.1.2
 	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/gorilla/sessions v1.3.0 // indirect
 	github.com/klauspost/compress v1.16.7 // indirect
