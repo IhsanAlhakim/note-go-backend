@@ -1,59 +1,60 @@
-package handler
+package handlers
 
 import (
-	"backend/data"
-	"backend/utils"
-	"fmt"
+	"backend/internal/auth"
+	"backend/internal/database"
 	"net/http"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
-
-	if !utils.IsHTTPMethodCorrect(w, r, "POST") {
-		return
-	}
-
-	if r.Header.Get("Content-Type") != "application/json" {
-		utils.JSONResponse(w, R{Message: "Content-Type must application/json"}, http.StatusUnsupportedMediaType)
-		return
-	}
 
 	payload := struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
 	}{}
 
-	if err := utils.DecodeRequestBody(w, r, &payload); err != nil {
+	if err := BindJSON(r, &payload); err != nil {
+		if err == ErrEmptyBody {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}
+
+	if payload.Username == "" || payload.Password == "" {
+		http.Error(w, "missing login credentials", http.StatusBadGateway)
 		return
 	}
 
-	if utils.HasEmptyField(w, payload) {
-		return
-	}
-
-	var result data.User
+	var result database.User
 
 	err := h.db.Collection("users").FindOne(ctx, bson.M{"username": payload.Username}).Decode(&result)
 
 	if err == mongo.ErrNoDocuments {
-		utils.JSONResponse(w, R{Message: "User not found"}, http.StatusNotFound)
+		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
 
 	if err != nil {
-		utils.JSONResponse(w, R{Message: fmt.Sprintf("Error fetch data: %v", err.Error())}, http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if !utils.IsPasswordCorrect(w, result.Password, payload.Password) {
+	if err := auth.VerifyPassword(result.Password, payload.Password); err != nil {
+		if err == bcrypt.ErrMismatchedHashAndPassword {
+			http.Error(w, "Invalid Credentials", http.StatusUnauthorized)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	session, _ := h.store.Get(r, data.SESSION_ID)
+	session, _ := h.store.Get(r, h.cfg.SessionID)
 	session.Values["userID"] = result.UserId.Hex()
 	session.Save(r, w)
 
@@ -62,80 +63,67 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		Username string `json:"username"`
 	}{result.Email, result.Username}
 
-	utils.JSONResponse(w, R{Message: "Login successful", Data: responseData}, http.StatusOK)
+	RespondJSON(w, R{Message: "Login successful", Data: responseData}, http.StatusOK)
 }
 
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
-	if !utils.IsHTTPMethodCorrect(w, r, "POST") {
-		return
-	}
-	session, err := h.store.Get(r, data.SESSION_ID)
+
+	session, err := h.store.Get(r, h.cfg.SessionID)
 	if err != nil {
-		utils.JSONResponse(w, R{Message: fmt.Sprintf("Error Logout: %v", err.Error())}, http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 	session.Options.MaxAge = -1
 	session.Save(r, w)
-	utils.JSONResponse(w, R{Message: "Logout successful"}, http.StatusOK)
+	RespondJSON(w, R{Message: "Logout successful"}, http.StatusOK)
 }
 
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
-	if !utils.IsHTTPMethodCorrect(w, r, "POST") {
-		return
-	}
-
-	if r.Header.Get("Content-Type") != "application/json" {
-		utils.JSONResponse(w, R{Message: "Content-Type must application/json"}, http.StatusUnsupportedMediaType)
-		return
-	}
-
 	payload := struct {
 		Username string `json:"username"`
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}{}
 
-	if err := utils.DecodeRequestBody(w, r, &payload); err != nil {
-		return
+	if err := BindJSON(r, &payload); err != nil {
+		if err == ErrEmptyBody {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	}
 
-	if utils.HasEmptyField(w, payload) {
-		return
+	if payload.Email == "" || payload.Username == "" || payload.Password == "" {
+		http.Error(w, "missing credentials", http.StatusBadRequest)
 	}
 
-	hashedPassword, err := utils.GenerateHashPassword(w, payload.Password)
+	hashedPassword, err := auth.GenerateHashPassword(payload.Password)
 	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	newUser := data.User{Username: payload.Username, Email: payload.Email, Password: string(hashedPassword)}
+	newUser := database.User{Username: payload.Username, Email: payload.Email, Password: string(hashedPassword)}
 
 	_, err = h.db.Collection("users").InsertOne(ctx, newUser)
 	if mongo.IsDuplicateKeyError(err) {
-		utils.JSONResponse(w, R{
-			Message: "Username is already taken",
-		}, http.StatusConflict)
+		http.Error(w, "Username is already taken", http.StatusConflict)
 		return
 	}
 
 	if err != nil {
-		utils.JSONResponse(w, R{
-			Message: fmt.Sprintf("Error create user: %v", err.Error()),
-		}, http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	utils.JSONResponse(w, R{Message: "User created successfully"}, http.StatusCreated)
+	RespondJSON(w, R{Message: "User created successfully"}, http.StatusCreated)
 }
 
 func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
-	if !utils.IsHTTPMethodCorrect(w, r, "DELETE") {
-		return
-	}
 
-	session, err := h.store.Get(r, data.SESSION_ID)
+	session, err := h.store.Get(r, h.cfg.SessionID)
 
 	if err != nil {
-		utils.JSONResponse(w, R{Message: fmt.Sprintf("Server Error: %v", err.Error())}, http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 	id := session.Values["userID"].(string) // interface{} -> string
 
@@ -146,9 +134,7 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	objID, err := primitive.ObjectIDFromHex(id)
 
 	if err != nil {
-		utils.JSONResponse(w, R{
-			Message: fmt.Sprintf("Server error : %v", err.Error()),
-		}, http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -158,15 +144,13 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	mongoSession, err := h.client.StartSession()
 
 	if err != nil {
-		utils.JSONResponse(w, R{
-			Message: fmt.Sprintf("Server error : %v", err.Error()),
-		}, http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	defer mongoSession.EndSession(ctx)
 
-	var deletedUser data.User
+	var deletedUser database.User
 	_, err = mongoSession.WithTransaction(ctx, func(sc mongo.SessionContext) (interface{}, error) {
 		// Hapus user
 		if err = h.db.Collection("users").FindOneAndDelete(ctx, bson.D{{Key: "_id", Value: objID}}).Decode(&deletedUser); err != nil {
@@ -183,32 +167,27 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err == mongo.ErrNoDocuments {
-		utils.JSONResponse(w, R{Message: "User not found"}, http.StatusNotFound)
+		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
 
 	if err != nil {
-		utils.JSONResponse(w, R{
-			Message: fmt.Sprintf("Error delete data : %v", err.Error()),
-		}, http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	session.Options.MaxAge = -1
 	session.Save(r, w)
 
-	utils.JSONResponse(w, R{
+	RespondJSON(w, R{
 		Message: "Data deleted successfully",
 	}, http.StatusOK)
 
 }
 
 func (h *Handler) GetLoggedInUser(w http.ResponseWriter, r *http.Request) {
-	if !utils.IsHTTPMethodCorrect(w, r, "GET") {
-		return
-	}
 
-	session, _ := h.store.Get(r, data.SESSION_ID)
+	session, _ := h.store.Get(r, h.cfg.SessionID)
 
 	id := session.Values["userID"].(string) // interface{} -> string
 
@@ -219,25 +198,21 @@ func (h *Handler) GetLoggedInUser(w http.ResponseWriter, r *http.Request) {
 	// Kalau pakai mongo v1
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		utils.JSONResponse(w, R{
-			Message: fmt.Sprintf("Server error : %v", err.Error()),
-		}, http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	var result data.User
+	var result database.User
 
 	err = h.db.Collection("users").FindOne(ctx, bson.D{{Key: "_id", Value: objID}}).Decode(&result)
 
 	if err == mongo.ErrNoDocuments {
-		utils.JSONResponse(w, R{Message: "User not found"}, http.StatusNotFound)
+		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
 
 	if err != nil {
-		utils.JSONResponse(w, R{
-			Message: fmt.Sprintf("Error fetch data : %v", err.Error()),
-		}, http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -246,7 +221,7 @@ func (h *Handler) GetLoggedInUser(w http.ResponseWriter, r *http.Request) {
 		Email    string `json:"email"`
 	}{result.Username, result.Email}
 
-	utils.JSONResponse(w, R{
+	RespondJSON(w, R{
 		Message: "Data fetched successfully", Data: data,
 	}, http.StatusOK)
 }
