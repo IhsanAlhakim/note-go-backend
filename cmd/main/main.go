@@ -1,6 +1,7 @@
 package main
 
 import (
+	"backend/internal/config"
 	"backend/internal/database"
 	"backend/internal/handlers"
 	middleware "backend/internal/middlewares"
@@ -12,22 +13,11 @@ import (
 	"os"
 
 	gctx "github.com/gorilla/context"
-	"github.com/joho/godotenv"
 	"github.com/rs/cors"
 )
 
 func main() {
-	if os.Getenv("ENV") != "production" {
-		if err := godotenv.Load(); err != nil {
-			log.Println("No .env file found, continue using system environment variables")
-		}
-	}
-
-	PORT := os.Getenv("PORT")
-
-	if PORT == "" {
-		PORT = "9000"
-	}
+	cfg := config.Load()
 
 	db, client := database.Connect()
 	defer client.Disconnect(context.TODO())

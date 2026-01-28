@@ -12,6 +12,7 @@ type Config struct {
 	MongoConnectionString string
 	SessionAuthKey        string
 	SessionEncryptionKey  string
+	Port                  string
 }
 
 func Load() *Config {
@@ -21,10 +22,16 @@ func Load() *Config {
 		}
 	}
 
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
 	return &Config{
 		SessionID:             os.Getenv("SESSION_ID"),
 		MongoConnectionString: os.Getenv("MONGO_CONNECTION_STRING"),
 		SessionAuthKey:        os.Getenv("SESSION_AUTH_KEY"),
 		SessionEncryptionKey:  os.Getenv("SESSION_ENCRYPTION_KEY"),
+		Port:                  port,
 	}
 }
