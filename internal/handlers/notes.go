@@ -84,10 +84,11 @@ func (h *Handler) DeleteNote(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UpdateNote(w http.ResponseWriter, r *http.Request) {
+	noteId := r.PathValue("id")
+
 	payload := struct {
-		NoteId string `json:"noteId"`
-		Title  string `json:"title"`
-		Text   string `json:"text"`
+		Title string `json:"title"`
+		Text  string `json:"text"`
 	}{}
 
 	if err := BindJSON(r, &payload); err != nil {
@@ -98,14 +99,14 @@ func (h *Handler) UpdateNote(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if payload.NoteId == "" {
+	if noteId == "" {
 		http.Error(w, "Missing required parameter: noteId", http.StatusBadRequest)
 		return
 	}
 
 	var updatedAt = time.Now().Format(time.RFC3339)
 
-	objID, err := primitive.ObjectIDFromHex(payload.NoteId)
+	objID, err := primitive.ObjectIDFromHex(noteId)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
