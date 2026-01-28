@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"backend/internal/database"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -165,20 +164,9 @@ func (h *Handler) FindNoteById(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) FindUserNotes(w http.ResponseWriter, r *http.Request) {
-	if !utils.IsHTTPMethodCorrect(w, r, "GET") {
-		return
-	}
-
-	session, _ := h.store.Get(r, data.SESSION_ID)
+	session, _ := h.store.Get(r, h.cfg.SessionID)
 
 	id := session.Values["userID"].(string)
-
-	// userId := r.URL.Query().Get("userId")
-
-	// if userId == "" {
-	// 	utils.JSONResponse(w, R{Message: "Missing required parameter: userId"}, http.StatusBadRequest)
-	// 	return
-	// }
 
 	filter := bson.D{{Key: "userId", Value: id}}
 
@@ -188,16 +176,16 @@ func (h *Handler) FindUserNotes(w http.ResponseWriter, r *http.Request) {
 	cursor, err := h.db.Collection("notes").Find(ctx, filter, findOptions)
 
 	if err != nil {
-		utils.JSONResponse(w, R{Message: fmt.Sprintf("Server error: %v", err.Error())}, http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	var results []data.Note
+	var results []database.Note
 
 	if err = cursor.All(ctx, &results); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	utils.JSONResponse(w, R{Message: "Data fetched successfully", Data: results}, http.StatusOK)
+	RespondJSON(w, R{Message: "Data fetched successfully", Data: results}, http.StatusOK)
 }
