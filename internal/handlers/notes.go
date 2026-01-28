@@ -1,8 +1,7 @@
-package handler
+package handlers
 
 import (
-	"backend/data"
-	"backend/utils"
+	"backend/internal/database"
 	"fmt"
 	"net/http"
 	"time"
@@ -14,32 +13,32 @@ import (
 )
 
 func (h *Handler) CreateNote(w http.ResponseWriter, r *http.Request) {
-	if !utils.IsHTTPMethodCorrect(w, r, "POST") {
-		return
-	}
-
 	payload := struct {
-		Title  string `json:"title"`
-		Text   string `json:"text"`
+		Title string `json:"title"`
+		Text  string `json:"text"`
 	}{}
 
-	if err := utils.DecodeRequestBody(w, r, &payload); err != nil {
-		return
+	if err := BindJSON(r, &payload); err != nil {
+		if err == ErrEmptyBody {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	}
 
 	if payload.Text == "" && payload.Title == "" {
-		utils.JSONResponse(w, R{Message: "Note text and title cannot both be empty. Only one of them"}, http.StatusBadRequest)
+		http.Error(w, "Note text and title cannot both be empty. Only one of them", http.StatusBadRequest)
 		return
 	}
 
-	session, _ := h.store.Get(r, data.SESSION_ID)
+	session, _ := h.store.Get(r, h.cfg.SessionID)
 
 	id := session.Values["userID"].(string)
 
 	var createdAt = time.Now().Format(time.RFC3339)
 	var updatedAt = createdAt
 
-	newNote := data.Note{
+	newNote := database.Note{
 		UserId:    id,
 		Title:     payload.Title,
 		Text:      payload.Text,
@@ -47,28 +46,14 @@ func (h *Handler) CreateNote(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt: updatedAt,
 	}
 
-	note, err := h.db.Collection("notes").InsertOne(ctx, newNote)
+	_, err := h.db.Collection("notes").InsertOne(ctx, newNote)
 
 	if err != nil {
-		utils.JSONResponse(w, R{Message: fmt.Sprintf("Server error: %v", err.Error())}, http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	var result data.Note
-
-	err = h.db.Collection("notes").FindOne(ctx, bson.M{"_id": note.InsertedID}).Decode(&result)
-
-	if err == mongo.ErrNoDocuments {
-		utils.JSONResponse(w, R{Message: "Note created", Data: nil}, http.StatusCreated)
-		return
-	}
-
-	if err != nil {
-		utils.JSONResponse(w, R{Message: fmt.Sprintf("Server error: %v", err.Error())}, http.StatusInternalServerError)
-		return
-	}
-
-	utils.JSONResponse(w, R{Message: "Note created", Data: result}, http.StatusCreated)
+	RespondJSON(w, R{Message: "Note created"}, http.StatusCreated)
 }
 
 func (h *Handler) DeleteNote(w http.ResponseWriter, r *http.Request) {
