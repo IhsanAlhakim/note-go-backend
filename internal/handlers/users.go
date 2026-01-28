@@ -24,6 +24,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
+		return
 	}
 
 	if payload.Username == "" || payload.Password == "" {
@@ -71,6 +72,7 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	session, err := h.store.Get(r, h.cfg.SessionID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	session.Options.MaxAge = -1
 	session.Save(r, w)
@@ -90,10 +92,12 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
+		return
 	}
 
 	if payload.Email == "" || payload.Username == "" || payload.Password == "" {
 		http.Error(w, "missing credentials", http.StatusBadRequest)
+		return
 	}
 
 	hashedPassword, err := auth.GenerateHashPassword(payload.Password)
@@ -124,6 +128,7 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	id := session.Values["userID"].(string) // interface{} -> string
 

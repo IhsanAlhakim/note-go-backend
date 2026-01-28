@@ -23,6 +23,7 @@ func (h *Handler) CreateNote(w http.ResponseWriter, r *http.Request) {
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
+		return
 	}
 
 	if payload.Text == "" && payload.Title == "" {
@@ -96,6 +97,7 @@ func (h *Handler) UpdateNote(w http.ResponseWriter, r *http.Request) {
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
+		return
 	}
 
 	if noteId == "" {
