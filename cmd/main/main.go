@@ -24,7 +24,7 @@ func main() {
 
 	store := database.NewSessionStore(db, cfg)
 
-	h := handlers.NewHandler(db, store, client)
+	h := handlers.New(db, store, client, cfg)
 
 	m := middleware.New(store)
 

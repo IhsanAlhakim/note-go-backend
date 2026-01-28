@@ -1,7 +1,7 @@
-package handler
+package handlers
 
 import (
-	"backend/utils"
+	"backend/internal/config"
 	"context"
 
 	"github.com/laziness-coders/mongostore"
@@ -10,14 +10,13 @@ import (
 
 var ctx = context.TODO()
 
-type R = utils.Response
-
 type Handler struct {
-	db    *mongo.Database
-	store *mongostore.MongoStore
+	db     *mongo.Database
+	store  *mongostore.MongoStore
 	client *mongo.Client
+	cfg    *config.Config
 }
 
-func NewHandler(db *mongo.Database, store *mongostore.MongoStore, client *mongo.Client) *Handler {
-	return &Handler{db: db, store: store, client: client}
+func New(db *mongo.Database, store *mongostore.MongoStore, client *mongo.Client, config *config.Config) *Handler {
+	return &Handler{db: db, store: store, client: client, cfg: config}
 }
