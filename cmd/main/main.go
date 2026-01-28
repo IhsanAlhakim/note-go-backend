@@ -1,16 +1,16 @@
 package main
 
 import (
-	"backend/data"
-	"backend/middleware"
+	"backend/internal/database"
+	"backend/internal/handlers"
+	middleware "backend/internal/middlewares"
 	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 
-	"backend/handler"
-
+	gctx "github.com/gorilla/context"
 	"github.com/joho/godotenv"
 	"github.com/rs/cors"
 )
@@ -28,14 +28,14 @@ func main() {
 		PORT = "9000"
 	}
 
-	db, client := data.ConnectDB()
+	db, client := database.Connect()
 	defer client.Disconnect(context.TODO())
 
-	store := data.NewMongoStore(db)
+	store := database.NewSessionStore(db)
 
-	h := handler.NewHandler(db, store, client)
+	h := handlers.NewHandler(db, store, client)
 
-	m := middleware.NewMiddleware(store)
+	m := middleware.New(store)
 
 	mux := new(middleware.CustomMux)
 
@@ -49,7 +49,7 @@ func main() {
 	})
 
 	mux.RegisterMiddleware(c.Handler)
-	mux.RegisterMiddleware(context.ClearHandler)
+	mux.RegisterMiddleware(gctx.ClearHandler)
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Connection Ok"))
