@@ -55,10 +55,10 @@ func main() {
 	mux.Handle("/update/note", m.Auth(http.HandlerFunc(h.UpdateNote)))
 
 	server := new(http.Server)
-	server.Addr = ":" + PORT
+	server.Addr = ":" + cfg.Port
 	server.Handler = mux
 
-	fmt.Println("Server started at localhost:" + PORT)
+	fmt.Println("Server started at localhost:" + cfg.Port)
 	if err := server.ListenAndServe(); err != nil {
 		log.Println("Shutting down server...")
 	}
