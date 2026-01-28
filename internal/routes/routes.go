@@ -8,18 +8,14 @@ import (
 )
 
 func Register(mux *mux.Mux, m *middleware.Middleware, h *handlers.Handler) {
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Connection Ok"))
-	})
-
-	mux.Handle("/login", m.CheckContentType(http.HandlerFunc(h.Login)))
-	mux.Handle("/logout", m.Auth(http.HandlerFunc(h.Logout)))
-	mux.Handle("/user", m.Auth(http.HandlerFunc(h.GetLoggedInUser)))
-	mux.Handle("/create/user", m.CheckContentType(http.HandlerFunc(h.CreateUser)))
-	mux.Handle("/delete/user", m.Auth(http.HandlerFunc(h.DeleteUser)))
-	mux.Handle("/notes", m.Auth(http.HandlerFunc(h.FindUserNotes)))
-	mux.Handle("/note", m.Auth(http.HandlerFunc(h.FindNoteById)))
-	mux.Handle("/create/note", m.Auth(m.CheckContentType(http.HandlerFunc(h.CreateNote))))
-	mux.Handle("/delete/note", m.Auth(http.HandlerFunc(h.DeleteNote)))
-	mux.Handle("/update/note", m.Auth(m.CheckContentType(http.HandlerFunc(h.UpdateNote))))
+	mux.Handle("POST /sessions", m.CheckContentType(http.HandlerFunc(h.Login)))
+	mux.Handle("DELETE /sessions", m.Auth(http.HandlerFunc(h.Logout)))
+	mux.Handle("GET /users", m.Auth(http.HandlerFunc(h.GetLoggedInUser)))
+	mux.Handle("POST /users", m.CheckContentType(http.HandlerFunc(h.CreateUser)))
+	mux.Handle("DELETE /users", m.Auth(http.HandlerFunc(h.DeleteUser)))
+	mux.Handle("GET /notes", m.Auth(http.HandlerFunc(h.FindUserNotes)))
+	mux.Handle("GET /notes/{id}", m.Auth(http.HandlerFunc(h.FindNoteById)))
+	mux.Handle("POST /notes", m.Auth(m.CheckContentType(http.HandlerFunc(h.CreateNote))))
+	mux.Handle("DELETE /notes/{id}", m.Auth(http.HandlerFunc(h.DeleteNote)))
+	mux.Handle("PUT /notes/{id}", m.Auth(m.CheckContentType(http.HandlerFunc(h.UpdateNote))))
 }
