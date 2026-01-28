@@ -34,12 +34,20 @@ func Connect() (*mongo.Database, *mongo.Client) {
 		Options: options.Index().SetUnique(true),
 	}
 
-	_, err = client.Database("note_go").Collection("users").Indexes().CreateOne(context.TODO(), indexModel)
+	db = client.Database("note_go")
+
+	_, err = db.Collection("users").Indexes().CreateOne(context.TODO(), indexModel)
 	if err != nil {
 		log.Fatalf("Failed to create index: %v", err)
 	}
 
-	db = client.Database("note_go")
-
 	return db, client
+}
+
+func GetDB() *mongo.Database {
+	return db
+}
+
+func GetDBClient() *mongo.Client {
+	return client
 }
