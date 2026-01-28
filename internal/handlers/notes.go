@@ -136,47 +136,32 @@ func (h *Handler) UpdateNote(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) FindNoteById(w http.ResponseWriter, r *http.Request) {
-	if !utils.IsHTTPMethodCorrect(w, r, "GET") {
-		return
-	}
-
-	noteId := r.URL.Query().Get("noteId")
+	noteId := r.PathValue("id")
 
 	if noteId == "" {
-		utils.JSONResponse(w, R{Message: "Missing required parameter: noteId"}, http.StatusBadRequest)
+		http.Error(w, "Missing required parameter: noteId", http.StatusBadRequest)
 		return
 	}
 
 	objID, err := primitive.ObjectIDFromHex(noteId)
 
 	if err != nil {
-		utils.JSONResponse(w, R{Message: fmt.Sprintf("Server error: %v", err.Error())}, http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	var result data.Note
+	var result database.Note
 
-	err = h.db.Collection("notes").FindOne(ctx, bson.M{"_id": objID}).Decode(&result)
-
-	if err == mongo.ErrNoDocuments {
-		utils.JSONResponse(w, R{Message: "Data not found"}, http.StatusNotFound)
+	if err = h.db.Collection("notes").FindOne(ctx, bson.M{"_id": objID}).Decode(&result); err != nil {
+		if err == mongo.ErrNoDocuments {
+			http.Error(w, "Data not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if err != nil {
-		utils.JSONResponse(w, R{Message: fmt.Sprintf("Server error: %v", err.Error())}, http.StatusInternalServerError)
-		return
-	}
-
-	data := struct {
-		UserId    string `json:"userId"`
-		Title     string `json:"title"`
-		Text      string `json:"text"`
-		CreatedAt string `json:"createdAt"`
-		UpdatedAt string `json:"updatedAt"`
-	}{result.UserId, result.Title, result.Text, result.CreatedAt, result.UpdatedAt}
-
-	utils.JSONResponse(w, R{Message: "Data fetched successfully", Data: data}, http.StatusOK)
+	RespondJSON(w, R{Message: "Data fetched successfully", Data: result}, http.StatusOK)
 }
 
 func (h *Handler) FindUserNotes(w http.ResponseWriter, r *http.Request) {
