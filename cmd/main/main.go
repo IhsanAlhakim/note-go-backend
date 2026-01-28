@@ -3,6 +3,7 @@ package main
 import (
 	"backend/data"
 	"backend/middleware"
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,7 +11,6 @@ import (
 
 	"backend/handler"
 
-	"github.com/gorilla/context"
 	"github.com/joho/godotenv"
 	"github.com/rs/cors"
 )
@@ -21,38 +21,36 @@ func main() {
 			log.Println("No .env file found, continue using system environment variables")
 		}
 	}
-	
+
 	PORT := os.Getenv("PORT")
-	
+
 	if PORT == "" {
 		PORT = "9000"
 	}
-	
-	
-	db, disconnect, client := data.ConnectDB()
-	defer disconnect()
-	
+
+	db, client := data.ConnectDB()
+	defer client.Disconnect(context.TODO())
+
 	store := data.NewMongoStore(db)
-	
+
 	h := handler.NewHandler(db, store, client)
 
 	m := middleware.NewMiddleware(store)
-	
+
 	mux := new(middleware.CustomMux)
 
 	allowedOrigin := os.Getenv("CLIENT_URL")
-	
+
 	c := cors.New(cors.Options{
-		AllowedOrigins: []string{allowedOrigin},
-		AllowedMethods: []string{"OPTIONS","GET","POST","DELETE","PATCH"},
-		AllowedHeaders: []string{"Content-Type"},
+		AllowedOrigins:   []string{allowedOrigin},
+		AllowedMethods:   []string{"OPTIONS", "GET", "POST", "DELETE", "PATCH"},
+		AllowedHeaders:   []string{"Content-Type"},
 		AllowCredentials: true,
 	})
 
 	mux.RegisterMiddleware(c.Handler)
 	mux.RegisterMiddleware(context.ClearHandler)
-	
-	
+
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Connection Ok"))
 	})
