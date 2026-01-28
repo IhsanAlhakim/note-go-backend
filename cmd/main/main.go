@@ -44,15 +44,15 @@ func main() {
 	})
 
 	mux.HandleFunc("/login", h.Login)
-	mux.Handle("/logout", m.AuthMiddleware(http.HandlerFunc(h.Logout)))
-	mux.Handle("/user", m.AuthMiddleware(http.HandlerFunc(h.GetLoggedInUser)))
+	mux.Handle("/logout", m.Auth(http.HandlerFunc(h.Logout)))
+	mux.Handle("/user", m.Auth(http.HandlerFunc(h.GetLoggedInUser)))
 	mux.HandleFunc("/create/user", h.CreateUser)
-	mux.Handle("/delete/user", m.AuthMiddleware(http.HandlerFunc(h.DeleteUser)))
-	mux.Handle("/notes", m.AuthMiddleware(http.HandlerFunc(h.FindUserNotes)))
+	mux.Handle("/delete/user", m.Auth(http.HandlerFunc(h.DeleteUser)))
+	mux.Handle("/notes", m.Auth(http.HandlerFunc(h.FindUserNotes)))
 	mux.HandleFunc("/note", h.FindNoteById)
-	mux.Handle("/create/note", m.AuthMiddleware(http.HandlerFunc(h.CreateNote)))
-	mux.Handle("/delete/note", m.AuthMiddleware(http.HandlerFunc(h.DeleteNote)))
-	mux.Handle("/update/note", m.AuthMiddleware(http.HandlerFunc(h.UpdateNote)))
+	mux.Handle("/create/note", m.Auth(http.HandlerFunc(h.CreateNote)))
+	mux.Handle("/delete/note", m.Auth(http.HandlerFunc(h.DeleteNote)))
+	mux.Handle("/update/note", m.Auth(http.HandlerFunc(h.UpdateNote)))
 
 	server := new(http.Server)
 	server.Addr = ":" + PORT
