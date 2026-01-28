@@ -48,6 +48,6 @@ func GetDB() *mongo.Database {
 	return db
 }
 
-func GetDBClient() *mongo.Client {
+func GetClient() *mongo.Client {
 	return client
 }
