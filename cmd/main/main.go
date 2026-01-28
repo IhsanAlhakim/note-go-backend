@@ -19,7 +19,7 @@ import (
 func main() {
 	cfg := config.Load()
 
-	db, client := database.Connect()
+	db, client := database.Connect(cfg)
 	defer client.Disconnect(context.TODO())
 
 	store := database.NewSessionStore(db)

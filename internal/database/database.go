@@ -1,25 +1,18 @@
-package data
+package database
 
 import (
+	"backend/internal/config"
 	"context"
 	"log"
-	"os"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func Connect() (*mongo.Database, *mongo.Client) {
+func Connect(cfg *config.Config) (*mongo.Database, *mongo.Client) {
 
-	MONGO_CONNECTION_STRING := os.Getenv("MONGO_CONNECTION_STRING")
-	if MONGO_CONNECTION_STRING == "" {
-		log.Fatal("Database connection string is missing or empty")
-	}
-
-	var err error
-
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(MONGO_CONNECTION_STRING))
+	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(cfg.MongoConnectionString))
 	if err != nil {
 		log.Fatalf("Failed to connect to the database: %v ", err.Error())
 	}
