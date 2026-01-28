@@ -28,7 +28,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if payload.Username == "" || payload.Password == "" {
-		http.Error(w, "missing login credentials", http.StatusBadGateway)
+		http.Error(w, "missing login credentials", http.StatusBadRequest)
 		return
 	}
 
