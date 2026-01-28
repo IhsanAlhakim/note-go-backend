@@ -8,6 +8,6 @@ COPY . .
 
 RUN go mod tidy
 
-RUN go build -o binary
+RUN go build -o binary ./cmd/main
 
 ENTRYPOINT ["/app/binary"]
