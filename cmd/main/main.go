@@ -4,6 +4,7 @@ import (
 	"backend/internal/database"
 	"backend/internal/handlers"
 	middleware "backend/internal/middlewares"
+	"backend/internal/mux"
 	"context"
 	"fmt"
 	"log"
@@ -37,7 +38,7 @@ func main() {
 
 	m := middleware.New(store)
 
-	mux := new(middleware.CustomMux)
+	mux := mux.New()
 
 	allowedOrigin := os.Getenv("CLIENT_URL")
 
