@@ -43,16 +43,16 @@ func main() {
 		w.Write([]byte("Connection Ok"))
 	})
 
-	mux.HandleFunc("/login", h.Login)
+	mux.Handle("/login", m.CheckContentType(http.HandlerFunc(h.Login)))
 	mux.Handle("/logout", m.Auth(http.HandlerFunc(h.Logout)))
 	mux.Handle("/user", m.Auth(http.HandlerFunc(h.GetLoggedInUser)))
-	mux.HandleFunc("/create/user", h.CreateUser)
+	mux.Handle("/create/user", m.CheckContentType(http.HandlerFunc(h.CreateUser)))
 	mux.Handle("/delete/user", m.Auth(http.HandlerFunc(h.DeleteUser)))
 	mux.Handle("/notes", m.Auth(http.HandlerFunc(h.FindUserNotes)))
-	mux.HandleFunc("/note", h.FindNoteById)
-	mux.Handle("/create/note", m.Auth(http.HandlerFunc(h.CreateNote)))
+	mux.Handle("/note", m.Auth(http.HandlerFunc(h.FindNoteById)))
+	mux.Handle("/create/note", m.Auth(m.CheckContentType(http.HandlerFunc(h.CreateNote))))
 	mux.Handle("/delete/note", m.Auth(http.HandlerFunc(h.DeleteNote)))
-	mux.Handle("/update/note", m.Auth(http.HandlerFunc(h.UpdateNote)))
+	mux.Handle("/update/note", m.Auth(m.CheckContentType(http.HandlerFunc(h.UpdateNote))))
 
 	server := new(http.Server)
 	server.Addr = ":" + cfg.Port
