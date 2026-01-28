@@ -10,9 +10,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var client *mongo.Client
-var db *mongo.Database
-
 func Connect() (*mongo.Database, *mongo.Client) {
 
 	MONGO_CONNECTION_STRING := os.Getenv("MONGO_CONNECTION_STRING")
@@ -22,7 +19,7 @@ func Connect() (*mongo.Database, *mongo.Client) {
 
 	var err error
 
-	client, err = mongo.Connect(context.TODO(), options.Client().ApplyURI(MONGO_CONNECTION_STRING))
+	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(MONGO_CONNECTION_STRING))
 	if err != nil {
 		log.Fatalf("Failed to connect to the database: %v ", err.Error())
 	}
@@ -34,7 +31,7 @@ func Connect() (*mongo.Database, *mongo.Client) {
 		Options: options.Index().SetUnique(true),
 	}
 
-	db = client.Database("note_go")
+	db := client.Database("note_go")
 
 	_, err = db.Collection("users").Indexes().CreateOne(context.TODO(), indexModel)
 	if err != nil {
@@ -42,12 +39,4 @@ func Connect() (*mongo.Database, *mongo.Client) {
 	}
 
 	return db, client
-}
-
-func GetDB() *mongo.Database {
-	return db
-}
-
-func GetClient() *mongo.Client {
-	return client
 }
