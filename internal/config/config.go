@@ -13,6 +13,7 @@ type Config struct {
 	SessionAuthKey        string
 	SessionEncryptionKey  string
 	Port                  string
+	AllowedOrigins        string
 }
 
 func Load() *Config {
@@ -33,5 +34,6 @@ func Load() *Config {
 		SessionAuthKey:        os.Getenv("SESSION_AUTH_KEY"),
 		SessionEncryptionKey:  os.Getenv("SESSION_ENCRYPTION_KEY"),
 		Port:                  port,
+		AllowedOrigins:        os.Getenv("CLIENT_URL"),
 	}
 }

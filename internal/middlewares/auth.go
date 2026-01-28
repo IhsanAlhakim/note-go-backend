@@ -1,21 +1,18 @@
 package middleware
 
 import (
-	"backend/data"
-	"backend/utils"
 	"net/http"
 )
 
-
 func (m *Middleware) AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		session, _ := m.store.Get(r, data.SESSION_ID)
+		session, _ := m.store.Get(r, m.cfg.SessionID)
 
-	if session.Values["userID"] == nil {
-		utils.JSONResponse(w, R{Message: "User not authenticated"}, http.StatusUnauthorized)
-		return
-	}
+		if session.Values["userID"] == nil {
+			http.Error(w, "User not authenticated", http.StatusUnauthorized)
+			return
+		}
 
-	next.ServeHTTP(w,r)
+		next.ServeHTTP(w, r)
 	})
 }

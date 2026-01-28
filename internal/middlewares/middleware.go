@@ -1,18 +1,16 @@
 package middleware
 
 import (
-	"backend/utils"
+	"backend/internal/config"
 
 	"github.com/laziness-coders/mongostore"
 )
 
-
-type R = utils.Response
-
 type Middleware struct {
 	store *mongostore.MongoStore
+	cfg   *config.Config
 }
 
-func NewMiddleware(store *mongostore.MongoStore) *Middleware {
-	return &Middleware{store: store}
+func New(store *mongostore.MongoStore, cfg *config.Config) *Middleware {
+	return &Middleware{store: store, cfg: cfg}
 }

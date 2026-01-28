@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 
 	gctx "github.com/gorilla/context"
 	"github.com/rs/cors"
@@ -26,14 +25,12 @@ func main() {
 
 	h := handlers.New(db, store, client, cfg)
 
-	m := middleware.New(store)
+	m := middleware.New(store, cfg)
 
 	mux := mux.New()
 
-	allowedOrigin := os.Getenv("CLIENT_URL")
-
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{allowedOrigin},
+		AllowedOrigins:   []string{cfg.AllowedOrigins},
 		AllowedMethods:   []string{"OPTIONS", "GET", "POST", "DELETE", "PATCH"},
 		AllowedHeaders:   []string{"Content-Type"},
 		AllowCredentials: true,
