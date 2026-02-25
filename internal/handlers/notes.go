@@ -124,7 +124,9 @@ func (h *Handler) UpdateNote(w http.ResponseWriter, r *http.Request) {
 			}},
 	}
 
-	if err = h.db.Collection("notes").FindOneAndUpdate(ctx, filter, update).Err(); err != nil {
+	var updatedNote database.Note
+
+	if err = h.db.Collection("notes").FindOneAndUpdate(ctx, filter, update).Decode(&updatedNote); err != nil {
 		if err == mongo.ErrNoDocuments {
 			http.Error(w, "Data not found", http.StatusBadRequest)
 			return
@@ -133,7 +135,7 @@ func (h *Handler) UpdateNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	RespondJSON(w, R{Message: "Note updated successfully"}, http.StatusOK)
+	RespondJSON(w, R{Message: "Note updated successfully", Data: updatedNote}, http.StatusOK)
 }
 
 func (h *Handler) FindNoteById(w http.ResponseWriter, r *http.Request) {
